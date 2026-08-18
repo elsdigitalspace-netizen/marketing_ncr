@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ELS – Marketing NCR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{
+      --red:#c62828;--red-lt:#ffebee;--green:#2e7d32;--green-lt:#e8f5e9;
+      --amber:#e65100;--amber-lt:#fff3e0;--blue:#1565c0;
+      --border:#d0d0d0;--text:#212121;--muted:#616161;--bg:#f0f2f5;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);padding:10px;font-size:16px;}
+
+    .toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;}
+    .tbtn{padding:0 20px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;height:52px;display:flex;align-items:center;gap:6px;touch-action:manipulation;}
+    .tbtn:active{opacity:.75;}
+    .btn-reset{background:#78909c;color:#fff;}
+    .btn-pdf{background:var(--red);color:#fff;}
+
+    .card{background:#fff;border-radius:14px;box-shadow:0 2px 14px rgba(0,0,0,.12);max-width:680px;margin:0 auto;overflow:hidden;}
+
+    /* HEADER */
+    .hdr{background:linear-gradient(135deg,#FDF0F5,#FEF6EC);padding:12px 14px;border-top:4px solid #BC287B;border-bottom:3px solid #EE3166;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .hdr img{height:54px;flex-shrink:0;}
+    .hdr-mid{flex:1;min-width:100px;}
+    .hdr-mid h1{font-size:13px;font-weight:800;color:#342F2E;text-transform:uppercase;letter-spacing:.4px;line-height:1.3;}
+    .hdr-mid p{font-size:11px;color:#888;margin-top:2px;}
+    .hdr-ncr{background:var(--red-lt);border:2px solid var(--red);border-radius:10px;padding:6px 12px;text-align:center;}
+    .hdr-ncr .ncr-lbl{font-size:9px;color:var(--red);text-transform:uppercase;font-weight:700;letter-spacing:.4px;}
+    .hdr-ncr .ncr-val{font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin-top:2px;font-family:monospace;}
+
+    .sec{padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);}
+    .sec.red{background:var(--red-lt);border-left:5px solid var(--red);color:var(--red);}
+    .sec.amber{background:var(--amber-lt);border-left:5px solid var(--amber);color:var(--amber);}
+    .sec.green{background:var(--green-lt);border-left:5px solid var(--green);color:var(--green);}
+    .sec.blue{background:#e3f2fd;border-left:5px solid var(--blue);color:var(--blue);}
+    .sec.pink{background:#fce4ec;border-left:5px solid #880e4f;color:#880e4f;}
+
+    /* TOGGLE */
+    .toggle-group{display:flex;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden;width:100%;}
+    .tog-btn{flex:1;padding:13px 4px;border:none;background:#f5f5f5;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;text-align:center;touch-action:manipulation;-webkit-appearance:none;line-height:1.2;}
+    .tog-btn:not(:last-child){border-right:2px solid var(--border);}
+    .tog-btn:active{opacity:.8;}
+    .tog-btn.active-open{background:var(--red-lt);color:var(--red);}
+    .tog-btn.active-review{background:var(--amber-lt);color:var(--amber);}
+    .tog-btn.active-closed{background:var(--green-lt);color:var(--green);}
+    .tog-btn.active-minor{background:var(--green-lt);color:var(--green);}
+    .tog-btn.active-major{background:var(--amber-lt);color:var(--amber);}
+    .tog-btn.active-critical{background:var(--red-lt);color:var(--red);}
+    .tog-btn.active-rb{background:#e3f2fd;color:var(--blue);}
+
+    /* FIELD */
+    .fg{padding:12px 14px;border-bottom:1px solid #eee;}
+    .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+    .field:last-child{margin-bottom:0;}
+    .field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+    .field input,.field select,.field textarea{
+      border:2px solid var(--border);border-radius:10px;padding:12px 14px;
+      font-size:16px;color:var(--text);outline:none;width:100%;font-family:inherit;
+      background:#fff;min-height:50px;-webkit-appearance:none;appearance:none;
+    }
+    .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+    .field textarea{min-height:80px;resize:vertical;}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red);outline:none;}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
+
+    /* NCR ITEM */
+    .ncr-item{background:#fafafa;border:2px solid #ef9a9a;border-radius:12px;margin:10px 14px;padding:12px;position:relative;}
+    .ncr-item-num{font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;margin-bottom:10px;padding-right:90px;}
+    .del-item{position:absolute;top:10px;right:10px;background:var(--red-lt);border:2px solid var(--red);color:var(--red);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+
+    /* CA ITEM */
+    .ca-item{background:#fffde7;border:2px solid #ffe082;border-radius:12px;margin:10px 14px;padding:12px;position:relative;}
+    .ca-item-num{font-size:11px;font-weight:800;color:var(--amber);text-transform:uppercase;margin-bottom:10px;padding-right:90px;}
+
+    .add-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 14px 12px;padding:14px;border:3px dashed var(--red);background:var(--red-lt);border-radius:12px;color:var(--red);font-size:15px;font-weight:800;cursor:pointer;width:calc(100% - 28px);touch-action:manipulation;-webkit-appearance:none;min-height:52px;}
+    .add-btn.amber{border-color:var(--amber);background:var(--amber-lt);color:var(--amber);}
+    .add-btn:active{opacity:.8;}
+
+    /* PHOTOS */
+    .photo-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;}
+    .pbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 10px;border:none;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;min-height:80px;touch-action:manipulation;-webkit-appearance:none;}
+    .pbtn:active{opacity:.8;}
+    .pbtn .ico{font-size:28px;line-height:1;}
+    .pbtn.cam{background:#880e4f;color:#fff;}
+    .pbtn.upl{background:#37474f;color:#fff;}
+    .photo-hint{padding:0 14px 12px;font-size:12px;color:var(--muted);font-style:italic;}
+    .no-photos{padding:20px 14px;text-align:center;color:var(--muted);font-size:14px;font-style:italic;}
+    .photo-grid{display:flex;flex-direction:column;gap:12px;padding:0 14px 14px;}
+    .photo-card{border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;position:relative;}
+    .photo-card img{width:100%;display:block;object-fit:contain;background:#f5f5f5;}
+    .photo-caption{padding:8px 10px;}
+    .photo-caption input{width:100%;border:none;border-bottom:1.5px solid var(--border);font-size:13px;outline:none;font-family:inherit;padding:4px;background:transparent;min-height:32px;}
+    .photo-ref-tag{display:inline-block;background:#880e4f;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:2px 7px;margin-top:4px;}
+    .photo-del{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+
+    /* CAMERA MODAL */
+    .cam-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;}
+    .cam-modal.active{display:flex;}
+    .cam-modal video{width:100%;max-width:440px;border-radius:14px;background:#000;display:block;}
+    .cam-modal canvas{display:none;}
+    .cam-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:440px;}
+    .cam-snap{padding:16px;background:#c62828;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:800;cursor:pointer;touch-action:manipulation;min-height:56px;}
+    .cam-cancel{padding:16px;background:#546e7a;color:#fff;border:none;border-radius:12px;font-size:17px;cursor:pointer;touch-action:manipulation;min-height:56px;}
+
+    /* IN-CHARGE */
+    .incharge-block{padding:14px;border-bottom:1px solid #eee;}
+    .incharge-title{font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #90caf9;}
+
+    .footer{background:#37474f;color:#cfd8dc;padding:10px 14px;font-size:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
+    .decl{padding:12px 14px;background:#fffde7;border-top:1px solid #ffe082;border-bottom:1px solid #ffe082;font-size:12px;color:#5d4037;line-height:1.7;}
+    .decl strong{color:var(--amber);}
+
+    .date-msg{font-size:11px;color:var(--red);margin-top:3px;display:none;}
+    .date-msg.show{display:block;}
+
+    .field-invalid{border-color:var(--red) !important;box-shadow:0 0 0 3px rgba(198,40,40,.15);}
+    .toggle-group.invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(198,40,40,.15);}
+
+    .other-wrap{display:none;}
+    .other-wrap.show{display:flex;}
+  </style>
+</head>
+<body>
+
+<div class="cam-modal" id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <canvas id="cam-canvas"></canvas>
+  <div class="cam-actions">
+    <button class="cam-snap" onclick="snapPhoto()">&#9679; Capture</button>
+    <button class="cam-cancel" onclick="closeCamera()">&#10005; Cancel</button>
+  </div>
+</div>
+
+<input type="file" id="file-camera"  accept="image/*" capture="environment" style="display:none;"/>
+<input type="file" id="file-gallery" accept="image/*" multiple style="display:none;"/>
+
+<div class="toolbar">
+  <button class="tbtn btn-reset" onclick="resetForm()">&#8635; Reset</button>
+  <button class="tbtn btn-pdf"   id="btn-pdf" onclick="exportPDF()">&#8595; Download PDF</button>
+</div>
+
+<div class="card" id="form-card">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <img id="logo-img" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8IS0tIENyZWF0b3I6IENvcmVsRFJBVyAtLT4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiB3aWR0aD0iMTI3bW0iIGhlaWdodD0iNzYuMm1tIiB2ZXJzaW9uPSIxLjEiIHN0eWxlPSJzaGFwZS1yZW5kZXJpbmc6Z2VvbWV0cmljUHJlY2lzaW9uOyB0ZXh0LXJlbmRlcmluZzpnZW9tZXRyaWNQcmVjaXNpb247IGltYWdlLXJlbmRlcmluZzpvcHRpbWl6ZVF1YWxpdHk7IGZpbGwtcnVsZTpldmVub2RkOyBjbGlwLXJ1bGU6ZXZlbm9kZCINCnZpZXdCb3g9IjAgMCAxMjcwMCA3NjIwIg0KIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIg0KIHhtbG5zOnhvZG09Imh0dHA6Ly93d3cuY29yZWwuY29tL2NvcmVsZHJhdy9vZG0vMjAwMyI+DQogPGRlZnM+DQogIDxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQogICA8IVtDREFUQVsNCiAgICAuZmlsNSB7ZmlsbDojRUY1NDlFfQ0KICAgIC5maWwyIHtmaWxsOiNGMDU1MkR9DQogICAgLmZpbDYge2ZpbGw6I0VGNDgyRH0NCiAgICAuZmlsNCB7ZmlsbDojRUUzMTY2fQ0KICAgIC5maWwzIHtmaWxsOiNCQzI4N0J9DQogICAgLmZpbDEge2ZpbGw6IzdDMkM2RH0NCiAgICAuZmlsMCB7ZmlsbDojMzQyRjJFfQ0KICAgXV0+DQogIDwvc3R5bGU+DQogPC9kZWZzPg0KIDxnIGlkPSJMYXllcl94MDAyMF8xIj4NCiAgPG1ldGFkYXRhIGlkPSJDb3JlbENvcnBJRF8wQ29yZWwtTGF5ZXIiLz4NCiAgPGcgaWQ9Il81NzM2MTM3NDQiPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik01NjQ5LjYxIDE3NTUuMDJjMTkuODcsMTM3LjYzIDEuMjcsNDA5LjU2IDMuNDksNTY0LjI4IDEuMzgsOTcuNiAtMzMuMTcsMTMyLjM1IC0xMzguMiwxNDUuMDggLTc4LjYzLDkuNTQgLTE3NS4yLDEwLjM0IC0yMjQuMTIsLTU2Ljc4IC03NS45OCwtMTA0LjIyIC02OS4xLC0zNzAuMiAtMzkuNTUsLTQ5MC4xNyA0NC43OSwtMTgxLjc0IDI0MCwtMTg1LjMgMzk4LjM4LC0xNjIuNDF6bTIuODggODE1LjQ5YzAsMzE4LjkgLTQ1LjI5LDI5Mi40OCAtMzY3LjQ4LDI5NC4wNiAtNTYuODgsMC4yNyAtMTU4LjM4LC0xOC44NCAtMTkyLjAyLC0xMy43bC01LjcxIDEzMS4xMWM1MS42Nyw4NS41OSA2NjguODYsMTc0LjczIDc2OC41MiwtMTY2LjIgNTUuNCwtMTg5LjYgNi4zMSwtODIwLjEyIDYuNTQsLTEwNTMuMTdsODMuOTQgMGMwLC0xNzIuMDEgLTcuNzUsLTE1NC43OCAtMTgwLjQsLTE3Ni4zNCAtMzQ0Ljc2LC00My4wNCAtNjYxLjcxLC00NS41OSAtNzQyLjQ2LDMzNC4xOCAtNDguNjIsMjI4LjY5IC00Ni41LDcyMS4zOCAzMzQuODUsNzI0LjAzIDIwMS45MiwxLjQxIDE1OC4wNywtNDAuNTkgMjk0LjIyLC03My45N3oiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNNTM1NS44MiAzNDEyLjgzYzE5Ljg4LDEzNy41OSAxLjI4LDQwOS41NSAzLjQ5LDU2NC4yNCAxLjM4LDk3LjY0IC0zMy4xNywxMzIuMzkgLTEzOC4yLDE0NS4xMSAtNzguNjMsOS41NCAtMTc1LjE5LDEwLjMxIC0yMjQuMTEsLTU2Ljc3IC03NS45OSwtMTA0LjIyIC02OS4wNywtMzcwLjI0IC0zOS41NiwtNDkwLjE4IDQ0Ljc5LC0xODEuNzQgMjQwLC0xODUuMzQgMzk4LjM4LC0xNjIuNHptMi44OSA4MTUuNDhjMCwzMTguOTEgLTQ1LjMsMjkyLjQ4IC0zNjcuNDksMjk0LjAzIC01Ni44OCwwLjMgLTE1OC4zOCwtMTguODEgLTE5Mi4wMiwtMTMuN2wtNS43MSAxMzEuMTVjNTEuNjgsODUuNTUgNjY4Ljg3LDE3NC43MiA3NjguNTIsLTE2Ni4yNCA1NS40LC0xODkuNTcgNi4zMSwtODIwLjA5IDYuNTUsLTEwNTMuMTdsODMuOTMgMGMwLC0xNzEuOTcgLTcuNzUsLTE1NC43NSAtMTgwLjQsLTE3Ni4zIC0zNDQuNzUsLTQzLjA4IC02NjEuNzEsLTQ1LjYgLTc0Mi40NiwzMzQuMTQgLTM0LjI1LDE2MS4xMyAtMjYuMzksNDc0LjU5IDgxLjczLDYwOS44NyA2Ny44OSw4NC45OCAxNDUuMzQsMTEzLjQyIDI1My4xNiwxMTQuMTYgMjAxLjg5LDEuNDEgMTU4LjA0LC00MC41NiAyOTQuMTksLTczLjk0eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik04OTk5LjU2IDQxMzMuODdsMCAtNzIzLjk2YzM1MS4xMywwIDQxOS4wOSwxNi4wOCA0MTkuNzMsMzg4LjIzIDAuNjQsMzU0LjgzIC04Mi45LDQxNi41MSAtNDE5LjczLDMzNS43M3ptLTMwNC4yNiAtODYwLjM4YzAsMTcyLjY4IC0xMC4xOCwxMDIuNzcgODMuOTQsMTY3Ljg4IDAsMTgzLjA1IC00NS41MywxMTU4LjA5IDcuNzgsMTI1MS4zbDIxMi41NCA4LjQ5IDAgLTQwOS44OWMxNzQuOTYsNDUuMDkgMzkxLjczLDEyMi4wMSA1MzUuNjcsLTYyLjQyIDE0NC45NCwtMTg1LjcxIDIzMC4xNiwtODg0Ljg5IC0xOTUuNTIsLTk4MC43MSAtMTIwLjYsLTI3LjE2IC01MzcuNDEsLTIyLjI2IC02NDQuNDEsMjUuMzV6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMCIgZD0iTTgyODYuMTEgMzgxOS4wOWwwIDI2Mi4zM2MtOTguNjgsNTAuNTMgLTk3LjM0LDk0LjA4IC0yMzAuNSw5NS4wOSAtMTIyLjc5LDAuOTQgLTE4NC4yNiwtOS4yNyAtMjA1LjIxLC0xMzIuNTkgLTQ0LjI2LC0yNjAuNTggMjQ4Ljg2LC0yMjQuODMgNDM1LjcxLC0yMjQuODN6bS01NzcuMSAtNTQ1LjZsOC44MyAxMzkuOTRjNTEuNSwxNS44MiAzMjIuODYsLTExLjI4IDQwOS41NiwtMi4yNSAxNTAuNDEsMTUuNzIgMTU4LjcxLDEyOC44IDE1OC43MSwyNjEuMDIgLTMxNy41NiwwIC02ODcuNjcsLTQzLjkyIC02MzguNjgsNDA3LjgxIDE0Ljc0LDEzNS44MSAxMTAuMSwyNTcuOTYgMjUxLjc1LDI3Mi45IDIyMC44LDIzLjI3IDIzOS40LC0yMS4xOCAzOTcuNCwtMTI0LjZsMjguMTQgMTA1Ljk0IDE4MS43MSAtMS4wMWMwLC0yMDQuOTggMjkuMTgsLTc4MC44NyAtNDEuOCwtOTM0LjAxIC0xMDkuNTIsLTIzNi40MSAtNTcyLjYsLTIwOC4yNCAtNzU1LjYyLC0xMjUuNzR6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMCIgZD0iTTIzNDYuNDkgMTY5MC4wNmwtMjUuOTUgLTk2LjQ3IC0xODIuOTkgMS4xNCAwLjc0IDEwNzAuMjNjMjIuMzMsMTcuMzkgMTgxLjExLDExLjA1IDIxOS41OSwxMS44NWwwLjAzIC04MzAuMjZjMTc1Ljk0LC0xMTUuMjYgNDIyLjYyLC0xOTUuMTcgNDE5Ljg2LDExNS4yMyAtMS4yNCwxMzkuMzQgLTIyLjEyLDYxNS44NSAxOC4xLDcwNS44N2wyMTIuNTQgOC40OWMwLjAzLC0yMTQuNzUgMjUuOTUsLTc0Ni42OSAtMjcuMzQsLTkxNy42NiAtNDEuMzksLTEzMi43OSAtMTM4Ljc2LC0xOTUuMDQgLTI3Ni40NiwtMTk1Ljc4IC0yMTUuODksLTEuMjEgLTIwMi44NiwyNi4yMyAtMzU4LjEyLDEyNy4zNnoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMzgzNi40MiAzMzQ3Ljg2bC0yNS45NiAtOTYuNDcgLTE4Mi45OSAxLjExIDAuNzQgMTA3MC4yM2MyMi4zMywxNy4zOSAxODEuMTEsMTEuMDUgMjE5LjU5LDExLjg1bDAuMDMgLTgzMC4yNmMxNzUuOTEsLTExNS4yNiA0MjIuNTksLTE5NS4xNCA0MTkuODcsMTE1LjI3IC0xLjI1LDEzOS4zIC0yMi4xMyw2MTUuODQgMTguMDksNzA1LjgzbDIxMi41NCA4LjQ5YzAsLTIxNC43MiAyNS45NSwtNzQ2LjY2IC0yNy4zMywtOTE3LjY2IC00MS40LC0xMzIuNzYgLTEzOC43NywtMTk1LjAxIC0yNzYuNDYsLTE5NS43OCAtMjE1LjkzLC0xLjE3IC0yMDIuODcsMjYuMjIgLTM1OC4xMiwxMjcuMzl6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMCIgZD0iTTYxMDMuNjkgMjg3NC43OGwwLjQ3IDEyMy4yMmMxMjUuMTcsMTE0LjE5IDMxOC42NiwyMi43NiA0MTYuNjQsLTgzLjgxIDIyNS4yMiwtMjQ0LjkgNTAxLjcyLC0xMTIzLjk4IDQ1My43NCwtMTMxOS40NmwtMjA5Ljg1IDBjMCwzMTcuMTMgLTE0NS44NSw2MzQuMzUgLTE5OS4zNCw4NjAuMzggLTExNi4xNCwtMTMyLjA1IC0yNDcuNzIsLTgyNy4xNCAtMjY5LjU0LC04NTMuMTZsLTIxMy4xMSAtNy44NWMzLjI5LDE4Ny4yMSAxNTEuMTksNTkxLjUzIDIyOS4yMiw3NzguNjUgMzkuMTgsOTMuOTEgMTY5LjIyLDI0OC4wNiAxMTMuMjksMzQwLjQ5IC0xMzguOTcsMjI5LjU2IC0yNDAuMDcsMTI0LjQ3IC0zMjEuNTIsMTYxLjU0eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik0xMjc3LjE3IDIwMTQuNDNjMCwtMTMzLjYgNTYuMzgsLTI4My4zMSAyMDkuODUsLTI4My4zMSAxMzYuNDUsMCAyMzAuODMsMjYuMDIgMjMwLjgzLDIzMC44M2wwIDk0LjQ1IC00NDAuNjggMCAwIC00MS45N3ptNjA4LjU2IDY0MC4wMmwtNC4wOSAtMTM2LjY4Yy0xNTYuODQsLTY0Ljg0IC02MDQuMjMsMTc3LjcxIC02MDQuNDcsLTMxNC40OCAxNzAuNzcsMCAzNDMuODUsLTIuNzUgNTE0LjMyLDAuMTcgMTIwLjUsMi4wOCAxMjMuOTksOS41IDEyNi4xNCwtMTI1LjY3IDEuMjgsLTc5Ljg4IDUuMzcsLTE3Mi45NSAtMTMuMywtMjQ5Ljg0IC03NC4xLC0zMDQuOCAtNTA2LjM5LC0zNDQuNzUgLTY4Ny42NiwtMTc4LjMyIC0xODcuNDUsMTcyLjA4IC0xOTAuMzcsNjAyLjk1IC0xMDEuODQsODIwLjkzIDEyOC44LDMxNi45NSA1MTYuMDMsMjIyLjkxIDc3MC45LDE4My44OXoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMzQ0OS4xMiAyMDE0LjQzYzAsLTEzMy42IDU2LjM0LC0yODMuMzEgMjA5Ljg1LC0yODMuMzEgMTM2LjQyLDAgMjMwLjgzLDI2LjAyIDIzMC44MywyMzAuODNsMCA5NC40NSAtNDQwLjY4IDAgMCAtNDEuOTd6bTYwOC41NiA2NDAuMDJsLTQuMTMgLTEzNi42OGMtNjAuNywtMjUuMDkgLTMzMC43MiwyMC42NCAtNDM3LjIyLC05LjU0IC0xMzguMzMsLTM5LjIyIC0xNjcuMTgsLTE3MC45NyAtMTY3LjIxLC0zMDQuOTQgMTcwLjc3LDAgMzQzLjgyLC0yLjc1IDUxNC4yOCwwLjE3IDEyMC41NCwyLjA4IDEyNC4wMyw5LjUgMTI2LjE4LC0xMjUuNjcgMS4yNCwtNzkuODggNS4zNywtMTcyLjk1IC0xMy4zMywtMjQ5Ljg0IC03NC4xLC0zMDQuOCAtNTA2LjM5LC0zNDQuNzUgLTY4Ny42NywtMTc4LjMyIC0xODcuNDUsMTcyLjA4IC0xOTAuMzcsNjAyLjk1IC0xMDEuODMsODIwLjkzIDEyOC43OSwzMTYuOTUgNTE2LjAyLDIyMi45MSA3NzAuOTMsMTgzLjg5eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik0xMDA1OS4zMSAzNjcyLjJjMCwtMTMzLjU2IDU2LjM0LC0yODMuMjggMjA5Ljg1LC0yODMuMjggMTM2LjQ1LDAgMjMwLjgzLDI2LjAyIDIzMC44MywyMzAuODNsMCA5NC40MiAtNDQwLjY4IDAgMCAtNDEuOTd6bTYwOC41NiA2NDAuMDVsLTQuMTMgLTEzNi42OGMtNjAuNywtMjUuMDggLTMzMC43MiwyMC42MSAtNDM3LjIyLC05LjU3IC0xMzguMzMsLTM5LjE4IC0xNjcuMTQsLTE3MC45NCAtMTY3LjIxLC0zMDQuOTQgMTcwLjc3LDAgMzQzLjg1LC0yLjc1IDUxNC4zMSwwLjIgMTIwLjUxLDIuMDUgMTI0LDkuNDcgMTI2LjE1LC0xMjUuNyAxLjI0LC03OS44NSA1LjM3LC0xNzIuOTUgLTEzLjMzLC0yNDkuODEgLTc0LjEsLTMwNC44IC01MDYuMzYsLTM0NC43NSAtNjg3LjY3LC0xNzguMzUgLTE4Ny40NSwxNzIuMTEgLTE5MC4zNyw2MDIuOTkgLTEwMS44LDgyMC45MyAxMjguNzYsMzE2Ljk4IDUxNi4wMywyMjIuOTEgNzcwLjksMTgzLjkyeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik0xMDg4OC4xOSA0MTQ0LjM4bDIuMDkgMTM5LjJjNjEuNzEsMTA0LjQyIDUwMi4wNSw4MS40NSA2MDYuMDQsMjguMjQgMTY2LjYsLTg1LjI1IDIxNC42MSwtMzYxLjU1IDk3LjgsLTQ5NS42NSAtMTE2LjY3LC0xMzMuOTMgLTQzMC40LC0xMTkuMzMgLTQ5Mi43MiwtMjIwLjkzIC02Ni41MSwtMTA4LjQ1IDMzLjAxLC0xODQuOCAxNDIuOTcsLTE4NS45IDEyMy4yMiwtMS4yOCAyMzkuMTYsMTAuNzQgMzU3LjMxLDExLjA0IDAuMSwtMTY5LjkzIC0xMS4yNSwtMTY3LjUxIC0xODUuMjQsLTE5Mi40NSAtNjI2LjA1LC04OS43OSAtNjAzLjc5LDM3NS4wNyAtNDg0LjEzLDUwNS4xMSAxMzUuNjUsMTQ3LjM2IDQ4MC44NywxMTkuNiA1MDAuOTksMjU1LjA0IDIzLjI2LDE1Ni40NiAtNzAuODEsMTc0LjQ2IC0xOTYuNDIsMTc5LjIzIC04OC42OCwzLjM1IC0yNjUuOTIsLTAuNzQgLTM0OC42OSwtMjIuOTN6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMCIgZD0iTTU4MDkuOSA0MTQ0LjM4bDIuMDUgMTM5LjJjNjEuNzQsMTA0LjQyIDUwMi4wNSw4MS40NSA2MDYuMDcsMjguMjQgMTY2LjU3LC04NS4yNSAyMTQuNTgsLTM2MS41NSA5Ny43NywtNDk1LjY1IC0xMTYuNjQsLTEzMy45MyAtNDMwLjM3LC0xMTkuMzMgLTQ5Mi43MiwtMjIwLjkzIC02Ni40OCwtMTA4LjQ1IDMzLC0xODQuOCAxNDIuOTcsLTE4NS45IDEyMy4yMiwtMS4yOCAyMzkuMTYsMTAuNzQgMzU3LjM0LDExLjA0IDAuMSwtMTY5LjkzIC0xMS4yNSwtMTY3LjUxIC0xODUuMjQsLTE5Mi40NSAtNjI2LjA1LC04OS43OSAtNjAzLjgyLDM3NS4wNyAtNDg0LjE2LDUwNS4xMSAxMzUuNjUsMTQ3LjM2IDQ4MC45MSwxMTkuNiA1MDEuMDIsMjU1LjA0IDIzLjIzLDE1Ni40NiAtNzAuODEsMTc0LjQ2IC0xOTYuNDUsMTc5LjIzIC04OC42NCwzLjM1IC0yNjUuOTIsLTAuNzQgLTM0OC42NSwtMjIuOTN6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMSIgZD0iTTkzODcuOCAyNzU5LjM4bDE0Ny4wOSA3Ljc1Yzg4Ljg0LC0xNzQuOTMgMjczLjk0LC0zMzMuNzQgNDY5LjMyLC0zNzcuNjIgMjIzLjE1LC01MC4xIDQ2NS4wOSw4Mi44MyA2NDguNjUsMTk2LjAxIDMyMS43MiwxOTguMzMgNTY0Ljc1LDQwMy41OCA4NTAuMTEsNDMuNjUgMjcuNiwtMzQuODIgNzUuMTQsLTg4LjU3IDc2Ljg1LC0xMzEuNjIgMS43OCwtNDUuNjkgLTIwLjk1LC0xNTAuNTUgLTM4Ljc1LC0xNzYuNTEgLTczLjg2LDM4LjQ4IC0yMDMuMzMsMzkyLjU0IC01NDYuNTEsMjY5LjAxIC0xOTMuMzksLTY5LjYzIC0zNjkuNiwtMjIwLjIyIC01NTcuNTIsLTMxMy4zNiAtMjMwLjEzLC0xMTQuMDYgLTQ0NC4yOCwtMTU5LjY1IC02NzMuNjcsLTEyLjU5IC0xMTcuNDgsNzUuMzEgLTM1Ny42MSwzNjQuMyAtMzc1LjU3LDQ5NS4yOHoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNOTA1Mi4wNyAxNzUyLjFjMCwtMjcuOSAtNi45NSwtMjAuOTEgMjAuOTUsLTIwLjkxbDM2Ljg3IC03MS4wOCAtOTkuNjUgLTk3LjA0Yy05Ni4xNiwxMjYuNDIgLTEzOS4xMSwzMzguOTggLTMxOS4wNyw0NDcuMjMgLTIwMS43NiwxMjEuMzggLTM5NS43OSwtMTUuOTEgLTU4NS4wNiwtODguNzEgLTI0NC41NywtOTQuMDggLTM1Ny4wMSwtODIuODMgLTU3NS41OSw2MS4yNSAtMTUzLjExLDEwMC45MyAtMzYwLjc3LDI0MS42NCAtNTU1Ljk4LDE4OC45NiAzLjQyLDk3LjI0IDk2Ljk3LDIxOC4xMSAxOTcuOTMsMjEwLjAyIDMzMC4zMiwtMjYuNDMgNDU1LjI1LC00MTMuNjYgODk5LjM5LC0yNzkuMDggMTkzLjQsNTguNTggNDI2LjM4LDI0MC41NyA2MzQuMzEsMTMyLjQyIDEwOC41OSwtNTYuNDggMzU0LjUzLC0zODMuODQgMzQ1LjksLTQ4My4wNnoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwzIiBkPSJNOTE1Ni45NiAyNzQ4LjlsMTQ2LjkgMGMxODcuMTgsLTUwMC42OCA1NjIuMjYsLTg3Ny45IDExMTMuMSwtNTg4LjQ4IDE3OS4yMyw5NC4xOCA0MzcuNDYsMjk2LjI0IDYyNS4wNCwzMjkuOTUgMjUxLjQ5LDQ1LjIyIDU3MS44LC0yOTAuMjMgNDQ0LjI4LC00MzguOCAtODIuNDYsLTk2LjAzIC0xODQuOTcsMzkyLjI2IC02MjYuMzIsMTc5Ljk2IC0xMDYuOTQsLTUxLjQ0IC0xOTguMTcsLTExMS42NCAtMjk3Ljk5LC0xNzQuMTkgLTE1Ny40LC05OC42NCAtMjIwLjg5LC02Ni4zNCAtMzk4LjYxLC04NC4wNCAtMzU0LjY2LC0zNS4zNSAtNDMwLjc0LC0xNTguNTggLTY2Ny45NSwxNTkuMjIgLTg1LjA1LDExMy45NSAtMzA1LjE3LDQ4OS44NyAtMzM4LjQ1LDYxNi4zOHoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMjYyMC4yIDQzMzMuMjRjODMuMDcsLTk2LjUgMzgyLjg3LC05NDcuNzEgMzI1LjI4LC0xMDcwLjIzbC0yMDkuODEgLTExLjg1YzAuMDcsMTEwLjMgLTU3LjExLDM1My40NSAtODYuMTYsNDYwLjgzIC0zNy4yNiwxMzcuNzIgLTEwMy45OCwyOTUuOTcgLTEzNC4yMyw0MjEuODggLTExMS43NCwtMTI3LjA1IC0yMTUuNDYsLTgzNC44MyAtMjQ4LjU2LC04NzQuMTFsLTIxMy4xMSAtNy44NmMwLjI0LDI0MC4yMyAxNzUuMzMsNzExIDI3Ny4zNCw5NTAuOSA3Ni44MiwxODAuNjcgODQuMjQsMTMwLjQ0IDI4OS4yNSwxMzAuNDR6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsNCIgZD0iTTczMjAuODEgMjQ5Ny4wOGMyNC42NywzMC4wNSA5Ny4zLDQ5LjMzIDEzNi4wNCw2My4yOSA3Ni43OSwyNy43NCA4My43MSw0NS44MyAxNDguMzQsMS4zMSA5MS40NiwtNjMuMDIgMTYxLjQ3LC0xMTAuODcgMjc0LjAxLC0xMzUuNzQgMjE4LjE4LC00OC4yNSA0MjYuMDgsMTAyLjg3IDYyNS41OSwxNjcuMiAyNTIuNjUsODEuNDYgMzkwLjQ4LC03NS40OCA1MDguNjcsLTI3MS4wNSA0NS45NiwtNzYuMDUgMjcyLjc3LC00ODkuNTEgMjc5Ljg5LC01NDlsLTExMy42NiAtNTYuMDRjLTU3LjQ1LDEzMC45OCAtMTg5Ljg3LDM3Ni41NSAtMjcwLjIxLDQ5MC41NCAtMTM5LjM0LDE5Ny42MyAtMjg2LjcxLDI0MC41NCAtNTE2Ljk3LDE1MS41NiAtMTk1LjI0LC03NS40MSAtMzY0LjEsLTE5MC42NyAtNTgxLjE2LC0xMzcuNDkgLTQzLjA4LDEwLjU0IC00NzYuMTcsMjU2LjgyIC00OTAuNTQsMjc1LjQyeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik03NDg4LjY4IDQzMTIuMjVsLTIuMDggLTEzOS4yM2MtMTYzLjM0LC05MS4zMyAtNTAyLjQ2LDE5NS44OCAtNTAxLjg1LC0zNzQuNjggMC40NywtNDcwLjkzIDEzOC4zNiwtMzc4LjE2IDUwMy45MywtMzc3Ljk2IC0wLjAzLC0xNDMuOTQgMS4wNSwtMTY3LjE0IC0xNTIuNCwtMTkzLjgzIC05Mi4wOSwtMTYuMDUgLTIzOC44MiwtMTQgLTMyNi4xNSwxOS41NCAtMTk0LjYxLDc0Ljc3IC0yMzUuMywyODQuMjUgLTI0NS45OCw0NjcuNjEgLTEwLjkxLDE4Ny40NSAtMi41MSw0MDguODIgMTQ0LjU1LDU0OC45NiAxNzEuNjQsMTYzLjYyIDM5NS4xOCw3MC4zMSA1NzkuOTgsNDkuNTl6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMSIgZD0iTTk2MjkuMSAyNzY5Ljg1YzQ3LjkyLDE5LjUxIDk4LjMxLDIxLjE5IDE0OC40NCwzMS40MyAxMjkuMTcsMjYuMzkgMTQzLjE0LC0xMjEuNjggNDI4LjQzLC0xMDQuNzkgMzgwLjYxLDIyLjQ5IDg2MS45OSw1MjEuMjMgMTAyNS43NCw0MjcuOTIgNjYuMzgsLTM3LjggMzc4Ljg3LC0yNzguMDcgNDIyLjQ1LC0zMjMuMDZsLTQ3LjY4IC0xNjYuMzdjLTY2Ljk1LDIwLjgxIC0xNzcuMDQsMzM1LjA1IC00MzguMDMsMjk2LjIgLTE3NC42NiwtMjUuOTggLTM2MC41NCwtMTUxLjczIC01MDguOTEsLTI0Ny40MiAtMzUyLjM3LC0yMjcuMiAtNzYxLjAyLC0zMTQuODQgLTEwMzAuNDQsODYuMDl6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMCIgZD0iTTEwODguMzEgMzk5Ny40OGMwLDk4LjU4IC00Ljg0LDIyMS44IDcwLDI5Ny4yNSA2MS4zMSw2MS44MSAyMzEuMjcsNjcuMDEgMjk5LjcsMzAuNDVsNi43OCAtMTMyLjY2IC0xMzQuNiAtMzYuMTljLTQwLjksLTgwLjM1IC0yMS41MiwtODU3LjAyIC0yMS41MiwtMTA1MC43MiAwLC0zMDguOTMgNjUuMDcsLTMwNC4yNiAtMjIwLjM2LC0zMDQuMjZsMCAxMTk2LjEzeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik00NTI5LjgyIDE3MjAuNjRsLTI2LjY2IC0xMjYuODUgLTE4My4xOSAwLjk0IDAuNzQgMTA3MC4yM2MyMi4zMywxNy4zOSAxODEuMTEsMTEuMDUgMjE5LjU5LDExLjg1bC0wLjA0IC03NzkuMDVjODUuMjksLTk5Ljg5IDIyMy44MiwtMTI0LjYgMzU2Ljc4LC0xMjQuNjcgMCwtMTQzLjM3IDI2LjE5LC0yMTcuMzcgLTE1My40NCwtMTg0LjY3IC0xMjAuMjcsMjEuOTMgLTEzMy40LDc5LjA0IC0yMTMuNzgsMTMyLjIyeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik0xNjQ0LjQyIDQyNDkuM2MwLDEwMy44OCAxNC40NCw4My45NCAyMzAuODQsODMuOTRsMCAtOTk2LjhjMCwtMTA0LjIyIC0xNS4xNSwtODMuOTQgLTIzMC44NCwtODMuOTRsMCA5OTYuOHoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMzEzNC4zNSA0MjQ5LjNjMCwxMDMuODggMTQuNDQsODMuOTQgMjMwLjgzLDgzLjk0bDAgLTk5Ni44YzAsLTEwNC4yMiAtMTUuMTgsLTgzLjk0IC0yMzAuODMsLTgzLjk0bDAgOTk2Ljh6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMiIgZD0iTTExMzYwLjM3IDU3OTEuNjdjLTM0LjgyLC0xNDMuNjQgLTIuNTksLTIxNC4xNSA4MS42NiwtMzM4LjA0IDMyLjAzLC00Ny4xNCA2NS4wMywtOTAuMTUgMTA0Ljg1LC0xMjguODcgODguMDcsLTg1LjY1IC0zOC4wNyw5NS4zOSAxMTUuMDcsLTI1LjM1IDEuMjcsNTcuNTkgLTc3LjI5LDIyNi4yNCAtMTA0Ljk2LDI5MC4yIC0zNi45LDg1LjM4IC04OC4wNywyMDEuOTYgLTE5Ni42MiwyMDIuMDZ6bTMwNC4yNiAtNTE0LjE1bDMuMTMgMy4xNmMtMC4yMSwtMC4yNCAtNC4xNywtMi4xMiAtMy4xMywtMy4xNnptMTAuNTEgLTczLjQzYy0yMDUuNTgsLTQ5LjMyIC00MzMuNTksMzQ4Ljk5IC00MzEuMTQsNTI0Ljc5IDIuNTUsMTg0LjM3IDE1OC44MSwyMDYuMjIgMjY2LjM1LDk3LjM0IDk0LjY1LC05NS43OSAxMTQuOTcsLTIzMS42MSAxNzUuMjcsLTMxNy44NiAwLDYxLjgxIC0yMy43NCwzMjEuNDUgMTYuNjUsMzQxLjYgMTI1Ljg0LDYyLjgyIDgzLjc0LC0yMDMuNDEgNzQuNjQsLTI3NS40OSAtMTMuMTksLTEwNC41NiAtOC43LC00MzEuMDUgLTcuMjUsLTU2OS44NSAxLjE0LC0xMDYuNzcgMjcuMzMsLTEyNS44MSAtNzMuNTMsLTEyNS44MSAtNTYuNTEsMjcuNzcgLTIwLjk5LDI1NC41IC0yMC45OSwzMjUuMjh6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMiIgZD0iTTQyNTcuMDIgNTEzMC42M2wzOS44MiA4NC4xNCAxOTEuMDEgLTAuMDMgMTIuNjMgMjcyLjYgLTk5Ljc2IDYzLjU2IDk1LjYzIDI3LjQzYzEuOTgsNzUuMzEgLTAuMDcsNDE1LjQzIDUyLjY0LDQ0NS45NSAxMTIuNjgsNTMuMzUgNjguODcsLTE0OS45MSA2NS42MSwtMTkxLjQ4IC03LjA4LC05MC4xOSAtMTEuMzUsLTIxMy44MSAtMTEuMzUsLTMwMy40NiA3My4xMywtMTcuNTkgMTQ5LjU1LC0zMy45MSAyMjMuMDEsLTQ5Ljc5IDU3LjA1LC0xMi4zMiAyMDYuMzYsLTE0LjU0IDE3NS43LC04Ni41OSAtNjYuMjEsLTQyLjE0IC0zMDUuNjcsNTIuMzcgLTM5OC43MSw1Mi40NGwtMTEuNTEgLTI2Mi4yM2M2Mi45OCwtMC4xMyAyNTIuNTksLTQxLjMzIDMwNS41LC0zOC40MSA0OS4zMiwyLjc2IDI3LjA2LDIyLjIgOTEuNTYsMTQuNjhsMzAuOTYgLTc1Ljg4Yy01Ni40MSwtMzUuMTYgLTM3My42LDMuNDUgLTQxOS42NiwyNC43NCAtNjYuNDIsLTEyNC43NyAtODkuODUsLTE2LjMyIC0xMjAuMjcsMTQuMyAtMzcuMDcsMzcuMzQgLTE1OS4zOSw4LjAzIC0yMjIuODEsOC4wM3oiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNMTE4OC45NyA1Nzk0Ljc2Yy0zOC4xMSwtMTI0LjcgMjg2LjUzLC01NTAuNTggMzU1Ljg0LC00NzEuMDQgODEuMzIsOTMuNDEgLTIzMC4yNyw1MDQuNzggLTM1NS44NCw0NzEuMDR6bTM4MS45OSAtMjMzLjkzYzAsODUuNTkgLTIxLjU1LDI0NS42MSAyNy45LDMwNy44NiA1MC40NywxNi44NiAxMDQuNDksLTQuNTMgOTIuNDQsLTU5LjI2bC0yNS4zOSAtMzMzLjIxYy0yLjU4LC05Ni4xNiAtMjAuMjgsLTMxLjM2IC0yMS42OSwtMTM1LjE0IC0xLjU4LC0xMTcuNTggLTE0MC41NSwtMTMzLjY2IC0yMjAuNTIsLTc0LjQ0IC02OC4zNiw1MC42NCAtMTI1LjM0LDExMS43OCAtMTc5LjQsMTc3LjM4IC02NS45NCw4MC4wMiAtMzA5LjksNDI2LjgyIC03Mi40OSw0MzIuODMgMjI2Ljk0LDUuNzEgMjgwLjcsLTE4NC4wMyAzOTkuMTUsLTMxNi4wMnoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNNzIxLjA5IDU3NzAuNjhjLTcwLjI3LC04MC42OCAtMTc3LjI4LC00ODAuMzMgLTI5Mi44OCwtNjMwLjQ1bC0xMDcuMDcgMjQuMTggMzQ3IDc1My44NGMzNy45NCw0Ny40NCAxMTguMDIsMjcuNiAxMzQuMjcsLTQ1LjI2IDMzLjI4LC0xNDguOTggMTM0LjU3LC01NjcuNTMgMTg1LjI3LC02OTYuMDkgMjIuNTMsLTU3LjE4IDgzLjUxLC0xMDIuOTEgNTcuNzUsLTEzOC41IC0xNDUuMDEsLTIwMC41MiAtMjY3LjIzLDYzOS40NSAtMzI0LjM0LDczMi4yOHoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNMjE2Ni4zMyA1Nzc4LjQ3Yy0zNS4xMiwtNjcuMTggLTE1LjgyLC0xOTkuMTcgLTAuNDEsLTI4My43MSA5LjkxLC01NC42MyA4MS41MiwtMjI2Ljc3IDgwLjk5LC0yNDEuOTUgLTExMi43MiwtMzQuMTggLTEyNS40OCw1NS4xNyAtMTUyLjY3LDE0OS4yOCAtMjUuOTYsODkuNzUgLTc2LjE4LDQxNC41OSAtMi4zOSw0NjYuNzcgMTkxLjk2LDYwLjI3IDI4OC42NiwtMjg4LjIyIDM4MS40NiwtMzkxLjk2IDAsMTMwLjg0IC0yMi42NywzNDkuMDUgNzUuMzgsNDE3Ljc0IDQxLjczLDMuMyA2Ny43OSw0IDgzLjIsLTM4LjA0IDEuOTgsLTYuNDggLTQ2LjE0LC0xMTAuMTkgLTUzLjY2LC0xNjkuODYgLTM5LjU4LC0zNDQuMjUgNTIuNDEsLTQ1MS4zNSAtMTA0LjkyLC00NTEuMTkgLTIwLjk1LDMxLjYzIC0xNjEuMzMsNDU4Ljc4IC0zMDYuOTgsNTQyLjkyeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik02OTUwLjg3IDU3NzguNDdjLTc5LjgxLC0xNTIuNTMgODEuMDIsLTUxMi44IDgwLjU1LC01MjUuNjYgLTExMi42OCwtMzQuMTggLTEyNS40NCw1NS4xNyAtMTUyLjY3LDE0OS4yOCAtMjUuOTYsODkuNzUgLTc2LjE5LDQxNC41OSAtMi4zOSw0NjYuNzcgMTkxLjk2LDYwLjI3IDI4OC42OSwtMjg4LjIyIDM4MS40OSwtMzkxLjk2IDAsMTMwLjg0IC0yMi43LDM0OS4wNSA3NS4zOCw0MTcuNzQgNDEuNywzLjMgNjcuNzksNCA4My4yLC0zOC4wNCAxLjk4LC02LjQ4IC00Ni4xNywtMTEwLjE5IC01My42NSwtMTY5Ljg2IC0zOS42MiwtMzQ0LjI1IDUyLjQxLC00NTEuMzUgLTEwNC45MywtNDUxLjE5IC0yMC45OCwzMS42MyAtMTYxLjM2LDQ1OC43OCAtMzA2Ljk4LDU0Mi45MnoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNOTk5Ni4zNiA1NDQ1LjRsLTQuNzcgLTI3Mi43M2M3Ny4xNSwtMC4wNyAzNTAuNDMsLTE5LjM4IDI2My45NywxMjIuMDggLTM1LjUyLDU4LjA1IC0xOTAuMjQsMTQ0LjY3IC0yNTkuMiwxNTAuNjV6bS0zNzcuNzMgLTE3OC4zNWM4Ni4yOSw1Ni44NyAxNTguNTEsLTUyLjc4IDI3Mi44LC02Mi45NiAwLDEwNC4wNSAtMi4yNSw2NjQuNyAzNS4wNSw3MDkuODkgMjIuMzMsMTkuNzEgNjMuOTcsMTQuOTUgODMuMDcsLTE0LjdsLTEzLjEzIC0zNjkuOTRjMTA3LjY1LC00OS4zNiAxODEuMzgsLTYyLjk5IDI4My4zOCwtMTM2LjIyIDkzLjY4LC02Ny4yNSAxNDUuMzIsLTIwMi43OSAxNS42MSwtMjU3LjI5IC0xMzUuMjQsLTU2Ljg0IC02NjMuNzUsLTEzLjI2IC02NzYuNzgsMTMxLjIyeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik03NTQxLjEzIDU4MzMuNjRjMTQ1LjMyLDAgMTMyLjEyLC04OC4yMSAxODIuODUsLTIxNS44NiAyOS4wMSwtNzIuOTkgODAuMTUsLTIxNS4xMiAxNDIuNDMsLTI1Ni4zMiAwLjA0LDExMS4zMSAxLjMxLDIxMi4yMyAtMC4zLDMyNC45OCAtMC43Nyw1Mi42MSAtNDcuMDcsMzE0LjI0IDg1LjgyLDIyMy40NSAzMi40MywtMjIuMTYgNDMuNjUsLTU4OS43MyAtNDMuNTUsLTYyMS44NiAtMTQyLjczLC05MC43OSAtMjM1LjI2LDI4Ny40OCAtMjgzLjMxLDM1Ni43NCAtMS42MSwtODAuNDggLTE5LjIxLC0xOTAuMDMgLTIwLjg5LC0yNzIuOSAtMy44OSwtMTkzLjA5IC0xMTAuNzYsLTEzOS40NyAtMTE2LjU0LC03My42IC0zLjIyLDM3IDIxLjgzLDIxNy4zNCAyNy45LDI2Ny4xNiA4LjksNzIuOTYgMjUuNjksMTk2LjMyIDI1LjU5LDI2OC4yMXoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWw1IiBkPSJNODgzMS42OCAyNzM4LjM5bDIyMSAwYzY1Ljg0LC0xMjkuNTMgMjg0LjAxLC01NDEuOTQgMzY0LjQ5LC02NjMuMDkgMzYuOTcsLTU1LjYgMTMzLjgsLTE1Ni42OSAxNDguOTgsLTE5Ny4yOSAtMTcuNDMsLTExLjg1IC0xMjUuOTgsLTU1LjYgLTE1NC42NSwtNDguNDggLTY5LjcsMTcuMjYgLTMxMi43OSw1ODYuOSAtNDc0LjY5LDc5My42MyAtMzEuNDYsNDAuMjIgLTEwMC40LDcxLjc4IC0xMDUuMTMsMTE1LjIzeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik04MjMzLjYzIDU0NTUuOTF6bTAgMHptMCAwYzEzLjQ2LC01NS41NyA0NS40OSwtODcuNzcgODYuNzksLTEyMy4wNSA2MC4yNCwtNTEuNTEgODAuMjgsLTU1LjA3IDE0NC4wNCwtMTMuMzcgLTE3LjQ5LDY0LjY0IC0xNjQuNjksMTM1LjAxIC0yMzAuODMsMTM2LjQyem0zOTYuNTMgODcuMjZsLTUwLjQ3IC0xMi43NWMtNTYuMjcsNjkuNiAtOTYuMjYsMjE3LjQgLTIwNy41MywyNTMuMDYgLTIxMS40OSw2Ny43NSAtMTcwLjEzLC0xNDUuMjIgLTE2OS45OSwtMjU0LjE0IDc5Ljk4LC05LjIgNTAxLjc5LC0xNTAuNTIgMzIzLjMsLTI4MS4zIC0xNTguNTgsLTExNi4yIC0zNDEuOSw4OC41OCAtNDAzLjk1LDIyMS42NyAtMjI5LjMyLDQ5Mi4wNSA0MzcuODksNTU2Ljc1IDUwOC42NCw3My40NnoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNMjg1MS4wNCA1NDU1Ljkxem0wIDB6bTAgMGMxMy40NiwtNTUuNTcgNDUuNTIsLTg3Ljc3IDg2Ljc5LC0xMjMuMDUgNjAuMjMsLTUxLjUxIDgwLjI4LC01NS4wNyAxNDQuMDQsLTEzLjM3IC0xNy40OSw2NC42NCAtMTY0LjY5LDEzNS4wMSAtMjMwLjgzLDEzNi40MnptMzk2LjUzIDg3LjI2bC01MC40NyAtMTIuNzVjLTU2LjI3LDY5LjYgLTk2LjIzLDIxNy40IC0yMDcuNTMsMjUzLjA2IC0yMTEuNDYsNjcuNzUgLTE3MC4xMywtMTQ1LjIyIC0xNjkuOTksLTI1NC4xNCA3OS45NywtOS4yIDUwMS43OCwtMTUwLjUyIDMyMy4zLC0yODEuMyAtMTU4LjU4LC0xMTYuMiAtMzQxLjkxLDg4LjU4IC00MDMuOTIsMjIxLjY3IC0yMjkuMzYsNDkyLjA1IDQzNy44Niw1NTYuNzUgNTA4LjYxLDczLjQ2eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik0xMjAzMS44OCA1NDU1Ljkxem0wIDB6bTAgMGMxMy40MywtNTUuNTcgNDUuNSwtODcuNzcgODYuOCwtMTIzLjA1IDYwLjIsLTUxLjUxIDgwLjI0LC01NS4wNyAxNDQuMDQsLTEzLjM3IC0xNy41LDY0LjY0IC0xNjQuNjksMTM1LjAxIC0yMzAuODQsMTM2LjQyem0zOTYuNSA4Ny4yNmwtNTAuNDYgLTEyLjc1Yy01Ni4yOCw2OS42IC05Ni4yMywyMTcuNCAtMjA3LjUsMjUzLjA2IC0yMTEuNSw2Ny43NSAtMTcwLjE2LC0xNDUuMjIgLTE3MC4wMywtMjU0LjE0IDc5Ljk4LC05LjIgNTAxLjc5LC0xNTAuNTIgMzIzLjMsLTI4MS4zIC0xNTguNTgsLTExNi4yIC0zNDEuOSw4OC41OCAtNDAzLjkxLDIyMS42NyAtMjI5LjMzLDQ5Mi4wNSA0MzcuODksNTU2Ljc1IDUwOC42LDczLjQ2eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik01MzA2LjI2IDUzNzEuOTdjMjQuMDEsOTkuMTIgMTY4LjcyLDExMS42NCAxNzcuNjIsMjIxLjg3IDcuMTUsODguNzcgLTEwMy4yOCwxOTkuODEgLTE4OS45NywyMDcuODMgLTMwMC40NywyNy44NCA1Mi40NCwtNDk3LjU2IDQ4LjIxLC01MTggLTE2NS4wNiwtNDMuNTIgLTIyMy4wNCwxNjQuODUgLTI1MS45NSwyOTEuOSAtNDcuMDEsMjA2LjUzIC0zLjQzLDMxNy40IDIyNi4xLDI5OS41NyAxMjYuNzEsLTkuODEgMjc3LjEzLC0xNTMuMDQgMjczLjIsLTI4Mi4yNyAtMi41MiwtODMuMDcgLTU1LjYzLC0xMjMuMzYgLTEwNy44MSwtMTc1Ljk3IC01Ni44MSwtNTcuMjggLTU1Ljk3LC0xMjYuMjUgLTE3NS40LC00NC45M3oiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNNjQwNy45NSA1MzYxLjQ2bC0yNzAuNzYgNTEuNDRjLTEwLjEsMTEyLjkyIDIwNi4yMywzNy41NyAyNzAuNzYsMjIuMDMgMCwxMjIuOTggLTguMjMsMzUyLjA3IDQxLjk3LDQ1MS4xNSAxNDQuMTcsMCA4NS4yMSwtNTQuMjYgNjguNDYsLTE3My4zNSAtMTMuNSwtOTUuNzYgLTUuNTEsLTIwMC40NSAtNS41MSwtMjk4Ljc5IDY4LjkzLDAuMTQgMjY4LjUxLC0yMy4xIDMwMS41OCwtNzYuMTUgMi41OSwtOTIuMjMgLTY2LjYxLC02NS42NyAtMTExLjU3LC0zOS4wOCAtNDYuMiwyNy4zMyAtMTQ4LjMxLDI4LjIgLTIwMC40OCw1Mi4yOGw4LjMyIC0zMDQuMzdjLTk4LjI0LDAuMDcgLTEwMS43LC0xLjA3IC0xMTEuODQsMTA2LjQgLTcuNzIsODEuOSA5LDEzOS4zMSA5LjA3LDIwOC40NHoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNMTA1NjIuOTUgNTQ0NS40bC02LjUyIC0xODkuMDMgLTEwMi4yNyAyLjYyYy0xLjYxLDkuODQgLTM4LjAxLDgxNy42NCAxMDkuNjMsNjE4LjIgMzIuMTksLTQzLjU1IC0zMi41NywtMTgyLjA5IDQxLjAyLC0zMjYuOTcgNDEuNjcsLTgyLjAyIDg0LjY4LC0xOTQuNSAxNTcuMjQsLTI0MC45NyAzMC40NSw3LjcyIDExMy45OSwxMDYuNDcgMTUzLjExLDI0Ljk4IDI4LjUzLC01OS40OSAtNjQuMTcsLTEwNy41NCAtMTExLjY4LC0xMDkuNjYgLTEzNi4xOCwtNi4wNyAtMTc2LjkxLDE0OC40MSAtMjQwLjUzLDIyMC44M3oiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwyIiBkPSJNNTc3OC40IDU0NDUuNGwtNi40OCAtMTg5LjAzIC0xMDIuMjcgMi42MmMtMS42NCw5Ljg0IC0zOC4wMSw4MTcuNjQgMTA5LjU5LDYxOC4yIDMyLjI0LC00My41NSAtMzIuNTMsLTE4Mi4wOSA0MS4wMywtMzI2Ljk3IDQxLjcsLTgyLjAyIDg0LjY4LC0xOTQuNSAxNTcuMjcsLTI0MC45NyAzMC40NSw3LjcyIDExMy45OSwxMDYuNDcgMTUzLjExLDI0Ljk4IDI4LjU0LC01OS40OSAtNjQuMiwtMTA3LjU0IC0xMTEuNjgsLTEwOS42NiAtMTM2LjE4LC02LjA3IC0xNzYuOTEsMTQ4LjQxIC0yNDAuNTcsMjIwLjgzeiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik0xOTUyLjc4IDU4NDYuN2MxLjI1LC01Ljg0IC0zNi4wMiwtMTU5LjU1IC0zNS43NSwtMjIyLjc4IDAuNCwtOTMuMjQgMTEuMTEsLTE3MC4yNiAxMC43MSwtMjYyLjQyIC0wLjMxLC03Mi4wOSA3MC42NywtNTMwLjAzIC03MC4xMSwtNDE3LjYyIC00OS40NiwzOS40OSAtMzQuODUsNDMwLjM0IC0zNC44NSw1MTIuMDMgMCwxMTMuMzIgLTU5LjQsNDk3LjQ5IDEzMCwzOTAuNzl6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMiIgZD0iTTExMTI5LjU0IDU4OTYuNTljMTguNywtNDAuNTkgLTIwLjIyLC0yOTUuMzMgLTIxLjQyLC0zNjYuODEgLTEuMjUsLTczLjQ3IDQ5LjEyLC0zNTMuMzUgLTgwLjcyLC0zMDMuNDkgLTQxLjk0LDE2LjA4IC0yNS42OSwxMjguNDkgLTE5LjMxLDE3Mi42OCA4LjcsNjAuMSA0Ljk0LDI1NC4yNyAyMi4xNiwzODcuMDYgMTMsMTAwLjE1IC0xMC43NCwxMTAuNTYgOTkuMjksMTEwLjU2eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDUiIGQ9Ik0xMTI5Ny40MiAyMDM1LjQyYy0zNy4wMSwtMTcuMDYgLTUzOS45NywtMzEuNSAtNjE5LjA3LC0zMS41IDMyLjYsNjUuMDcgMjI3LjU3LDEzMi40MiAzMDMuMDUsMTQ4LjM0IDEwMi43OCwyMS42MiAyNTcuODYsLTI4LjI3IDMxNi4wMiwtMTE2Ljg0eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDAiIGQ9Ik0zMTg1LjAxIDI4NTQuN2MtMTQzLjM2LDQzLjg1IC04Mi4xNiwyNzguMjEgMTMzLjk3LDIxNS4yNSAxMDYuMzcsLTMwLjk5IDExNy40NSwtMjkyLjE3IC0xMzMuOTcsLTIxNS4yNXoiLz4NCiAgIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMTY5NS4wOSAyODU0LjdjLTE0My4zMyw0My44NSAtODIuMTYsMjc4LjIxIDEzNCwyMTUuMjUgMTA2LjM0LC0zMC45OSAxMTcuNDIsLTI5Mi4xNyAtMTM0LC0yMTUuMjV6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsNSIgZD0iTTc3NzEuOTYgMjY0My45OGwzMTMuNjcgNDMuMDdjMTA0LjU1LDguOTcgMjI5LjgyLDMwLjM2IDMzNi44NiwzMC4zNiAtMTEuMzUsLTMxLjE2IC0yMi4xOSwtMjguNjEgLTYxLjE3LC00My43NSAtODcuNywtMzQuMTIgLTEyMy43LC02Mi4zMiAtMjQyLjU5LC05My4xOCAtNzIuMTUsLTE4LjcgLTMyMi41OSwtMjQuNDEgLTM0Ni43Nyw2My41eiIvPg0KICAgPHBhdGggY2xhc3M9ImZpbDIiIGQ9Ik05MjU5LjIgNTg4My40YzEuMjQsLTQzLjA4IC01NC4xOSwtMTU4LjQ4IC0xMDMuNTEsLTE2NS40MyAtMTQ4LjM0LC0yMC45NSAtMjguMjQsMjY5LjU4IDEwMy41MSwxNjUuNDN6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMiIgZD0iTTM4NzYuNjEgNTg4My40YzEuMjQsLTQzLjA4IC01NC4xOSwtMTU4LjQ4IC0xMDMuNDgsLTE2NS40MyAtMTQ4LjM0LC0yMC45NSAtMjguMjcsMjY5LjU4IDEwMy40OCwxNjUuNDN6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsMiIgZD0iTTEwOTUyLjk2IDUwMTguODJjMzAuMzksNjEuMTEgOTYuNiw4MC4xOCAxNTIuODcsMzUuNjkgLTcuOTksLTUwLjYgLTk1LjgyLC0xMzEuNjUgLTE1Mi44NywtMzUuNjl6Ii8+DQogICA8cGF0aCBjbGFzcz0iZmlsNiIgZD0iTTkwNzMuMDIgMTczMS4xOWMtMjcuOSwwIC0yMC45NSwtNi45OSAtMjAuOTUsMjAuOTEgMjcuOTQsMCAyMC45NSw2Ljk5IDIwLjk1LC0yMC45MXoiLz4NCiAgPC9nPg0KIDwvZz4NCjwvc3ZnPg0K" alt="ELS"/>
+    <div class="hdr-mid">
+      <h1>Non-Conformance Report</h1>
+      <p>Marketing Department &middot; Energy Livingscapes Pvt Ltd</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+      <div class="hdr-ncr">
+        <div class="ncr-lbl">NCR Number</div>
+        <div class="ncr-val" id="ncr-display">—</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-size:10px;color:#999;text-transform:uppercase;font-weight:600;">Date</label>
+        <input id="form-date" type="date" readonly style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:13px;color:#342F2E;outline:none;background:#f5f5f5;font-family:inherit;min-height:38px;width:140px;"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="sec red">NCR Status</div>
+  <div class="fg">
+    <div class="field">
+      <label>Status</label>
+      <div class="toggle-group">
+        <button type="button" class="tog-btn" id="st-btn-open"   onclick="setToggle('status','open')"  >&#9679; Open</button>
+        <button type="button" class="tog-btn" id="st-btn-review" onclick="setToggle('status','review')">&#8635; Under Review</button>
+        <button type="button" class="tog-btn" id="st-btn-closed" onclick="setToggle('status','closed')">&#10003; Closed</button>
+      </div>
+      <input type="hidden" id="ncr-status-val" value="open"/>
+    </div>
+    <div class="field">
+      <label>Target Closure Date <span style="color:var(--red);">*</span></label>
+      <input id="target-close" type="date" oninput="validateTargetDate()"/>
+      <div class="date-msg" id="target-date-msg">&#9888; Must be today or a future date</div>
+    </div>
+  </div>
+
+  <!-- MARKETING & LEAD DETAILS -->
+  <div class="sec red">Marketing &amp; Lead Details</div>
+  <div class="fg">
+    <div class="field">
+      <label>Property / Project <span style="color:var(--red);">*</span></label>
+      <select id="proj-name" onchange="generateNCR()">
+        <option value="">Select project…</option>
+        <option value="GEN">General / Not Project-Specific</option>
+        <option value="VS">Vidya Sukritham</option>
+        <option value="JH">Jai Ho</option>
+        <option value="MT">Manomay Tower A</option>
+        <option value="NL">Nandalala</option>
+        <option value="HT">Hearty</option>
+        <option value="TR">Triksham</option>
+        <option value="LX">Luxe</option>
+        <option value="OT">Others</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Client / Unit Name <span style="color:var(--red);">*</span></label><input id="client-name" type="text" placeholder="Client name or unit no."/></div>
+      <div class="field"><label>Lead / Enquiry Ref. No.</label><input id="lead-ref" type="text" placeholder="Askeva lead ID / enquiry no."/></div>
+    </div>
+    <div class="field"><label>Marketing Executive / CRM In-Charge</label><input id="mkt-exec" type="text" placeholder="Name of executive handling the lead"/></div>
+  </div>
+
+  <!-- RAISED BY -->
+  <div class="sec red">Raised By</div>
+  <div class="fg">
+    <div class="field">
+      <label>Raised By <span style="color:var(--red);">*</span></label>
+      <div class="toggle-group" id="raised-toggle-group">
+        <button type="button" class="tog-btn" id="rb-btn-marketing" onclick="setToggle('raised','marketing')">&#128188; Marketing Dept.</button>
+        <button type="button" class="tog-btn" id="rb-btn-client"    onclick="setToggle('raised','client')"   >&#128100; Client</button>
+        <button type="button" class="tog-btn" id="rb-btn-mgmt"      onclick="setToggle('raised','mgmt')"     >&#127970; Management</button>
+      </div>
+      <input type="hidden" id="raised-by-val" value=""/>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Reported By (Name) <span style="color:var(--red);">*</span></label><input id="auditor-name" type="text" placeholder="Reported by name"/></div>
+      <div class="field"><label>NCR Date <span style="color:var(--red);">*</span></label><input id="ncr-date" type="date"/></div>
+    </div>
+  </div>
+
+  <!-- SEVERITY -->
+  <div class="sec red">Severity</div>
+  <div class="fg">
+    <div class="field">
+      <label>Severity <span style="color:var(--red);">*</span></label>
+      <div class="toggle-group" id="sev-toggle-group">
+        <button type="button" class="tog-btn" id="sev-btn-minor"    onclick="setToggle('sev','minor')"   >&#9679; Minor</button>
+        <button type="button" class="tog-btn" id="sev-btn-major"    onclick="setToggle('sev','major')"   >&#9650; Major</button>
+        <button type="button" class="tog-btn" id="sev-btn-critical" onclick="setToggle('sev','critical')">&#9888; Critical</button>
+      </div>
+      <input type="hidden" id="sev-val" value=""/>
+    </div>
+  </div>
+
+  <!-- NCR ITEMS -->
+  <div class="sec red">Non-Conformances Observed</div>
+  <div id="ncr-list"></div>
+  <button type="button" class="add-btn" onclick="addNCR()">&#43; Add Non-Conformance</button>
+
+  <!-- PHOTOS -->
+  <div class="sec pink">&#128247; Screenshots / Photos</div>
+  <div class="photo-btns">
+    <button type="button" class="pbtn cam" onclick="openCamera()">
+      <span class="ico">&#128247;</span>Take Photo
+    </button>
+    <button type="button" class="pbtn upl" onclick="openGallery()">
+      <span class="ico">&#128193;</span>Attach Photo
+    </button>
+  </div>
+  <div class="photo-hint">Attach screenshots of CQF, Askeva, letters or related documents. Included in PDF.</div>
+  <div id="no-photo-msg" class="no-photos">No photos yet</div>
+  <div class="photo-grid" id="photo-grid"></div>
+
+  <!-- CORRECTIVE ACTION -->
+  <div class="sec amber">Corrective Action</div>
+  <div id="ca-list"></div>
+  <button type="button" class="add-btn amber" onclick="addCA()">&#43; Add Corrective Action</button>
+
+  <!-- AUTHORISATION -->
+  <div class="sec blue">Authorisation</div>
+  <div class="incharge-block">
+    <div class="incharge-title">&#128203; Marketing Head / In-Charge</div>
+    <div class="field-row">
+      <div class="field"><label>Name of In-Charge</label><input id="ic-name" type="text" placeholder="In-charge name"/></div>
+      <div class="field"><label>Date</label><input id="ic-date" type="date"/></div>
+    </div>
+  </div>
+
+  <div class="decl">
+    <strong>Note:</strong> Fields marked <span style="color:var(--red);">*</span> are mandatory and must be filled before the PDF can be downloaded. Optional fields left blank are omitted from the downloaded PDF. This NCR must be closed within the target closure date; corrective action and rectification details to be completed on the printed / digital copy.
+  </div>
+
+  <div class="footer">
+    <span>Energy Livingscapes Pvt Ltd — Marketing Department</span>
+    <span id="footer-ts"></span>
+  </div>
+</div>
+
+<script>
+// Convert SVG logo to PNG so html2canvas renders it reliably in the PDF
+const LOGO_SRC_SVG = document.getElementById('logo-img').src;
+let LOGO_SRC = LOGO_SRC_SVG;
+(function(){
+  const img = new Image();
+  img.onload = function(){
+    try{
+      const c = document.createElement('canvas');
+      c.width = 480; c.height = 288;
+      c.getContext('2d').drawImage(img,0,0,480,288);
+      LOGO_SRC = c.toDataURL('image/png');
+      document.getElementById('logo-img').src = LOGO_SRC;
+    }catch(e){}
+  };
+  img.src = LOGO_SRC_SVG;
+})();
+
+// ── Marketing NC categories ──
+const MKT_CATEGORIES = [
+  'CQF - Not Filled',
+  'CQF - Incomplete',
+  'CQF - Inefficient Evaluation',
+  'Askeva - New Leads Updation',
+  'Askeva - Improper Followup Updation',
+  'Client Followup',
+  'Details Not Communicated',
+  'Allotment Letter',
+  'Key Handover Letter',
+  'Document Handover Letter',
+  'Document Registration Not Handled Properly',
+  'Property Cost Sheet',
+  'Others'
+];
+
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('form-date').value   = todayStr;
+document.getElementById('ncr-date').value    = todayStr;
+document.getElementById('target-close').min  = todayStr;
+document.getElementById('footer-ts').textContent = 'Generated: ' + new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+
+// ── NCR Number ──
+function generateNCR(){
+  const prefix = 'MKT' + (document.getElementById('proj-name').value || 'XX');
+  const n = new Date();
+  const dd=String(n.getDate()).padStart(2,'0'), mm=String(n.getMonth()+1).padStart(2,'0'), yy=String(n.getFullYear()).slice(-2);
+  const hh=String(n.getHours()).padStart(2,'0'), mi=String(n.getMinutes()).padStart(2,'0'), ss=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('ncr-display').textContent = prefix+dd+mm+yy+hh+mi+ss;
+}
+generateNCR();
+document.getElementById('proj-name').addEventListener('change', generateNCR);
+
+// ── Target date validation ──
+function validateTargetDate(){
+  const inp=document.getElementById('target-close'), msg=document.getElementById('target-date-msg');
+  if(inp.value && inp.value < todayStr){
+    inp.value=todayStr;
+    msg.classList.add('show');
+    setTimeout(()=>msg.classList.remove('show'),2500);
+  }
+}
+
+// ── Toggles ──
+function setToggle(group, val){
+  if(group==='status'){
+    ['open','review','closed'].forEach(k=>{ document.getElementById('st-btn-'+k).className='tog-btn'+(k===val?' active-'+k:''); });
+    document.getElementById('ncr-status-val').value=val;
+  } else if(group==='raised'){
+    ['marketing','client','mgmt'].forEach(k=>{ document.getElementById('rb-btn-'+k).className='tog-btn'+(k===val?' active-rb':''); });
+    document.getElementById('raised-by-val').value=val;
+    if(val) document.getElementById('raised-toggle-group')?.classList.remove('invalid');
+  } else if(group==='sev'){
+    ['minor','major','critical'].forEach(k=>{ document.getElementById('sev-btn-'+k).className='tog-btn'+(k===val?' active-'+k:''); });
+    document.getElementById('sev-val').value=val;
+    if(val) document.getElementById('sev-toggle-group')?.classList.remove('invalid');
+  }
+}
+
+// ── Clear invalid-field highlight as the user fixes it ──
+document.addEventListener('input', e=>{ if(e.target.classList && e.target.classList.contains('field-invalid')) e.target.classList.remove('field-invalid'); });
+document.addEventListener('change', e=>{ if(e.target.classList && e.target.classList.contains('field-invalid')) e.target.classList.remove('field-invalid'); });
+setToggle('status','open');
+
+// ── NCR Items ──
+let ncrCount=0;
+function addNCR(){
+  ncrCount++;
+  const id=ncrCount;
+  const div=document.createElement('div');
+  div.className='ncr-item'; div.id='ncr-item-'+id;
+  div.innerHTML=`
+    <div class="ncr-item-num">Non-Conformance #${id}</div>
+    <button type="button" class="del-item" onclick="document.getElementById('ncr-item-${id}').remove()">&#10005; Remove</button>
+    <div class="field"><label>Non-Conformance Category <span style="color:var(--red);">*</span></label>
+      <select class="nc-cat" onchange="toggleOtherBox(this,${id})"><option value="">Select…</option>${MKT_CATEGORIES.map(t=>`<option>${t}</option>`).join('')}</select>
+    </div>
+    <div class="field other-wrap" id="nc-other-wrap-${id}">
+      <label>Please Specify (Others) <span style="color:var(--red);">*</span></label>
+      <input type="text" class="nc-other" placeholder="Specify the non-conformance category…"/>
+    </div>
+    <div class="field"><label>Client / Lead / File Reference</label>
+      <input type="text" class="nc-ref" placeholder="Client name, lead ID, or file no."/>
+    </div>
+    <div class="field"><label>Description of Non-Conformance <span style="color:var(--red);">*</span></label>
+      <textarea class="nc-desc" placeholder="Describe the observation in detail…"></textarea>
+    </div>
+    <div class="field"><label>Photo / Screenshot Reference</label>
+      <input type="text" class="nc-photo" placeholder="e.g. MKT170826-Photo-01"/>
+    </div>`;
+  document.getElementById('ncr-list').appendChild(div);
+}
+addNCR();
+
+function toggleOtherBox(selectEl,id){
+  const wrap=document.getElementById('nc-other-wrap-'+id);
+  if(!wrap) return;
+  if(selectEl.value==='Others'){ wrap.classList.add('show'); }
+  else { wrap.classList.remove('show'); const inp=wrap.querySelector('.nc-other'); if(inp) inp.value=''; }
+}
+
+// ── Corrective Actions ── (name + due date only; space for action in PDF)
+let caCount=0;
+function addCA(){
+  caCount++;
+  const id=caCount;
+  const div=document.createElement('div');
+  div.className='ca-item'; div.id='ca-item-'+id;
+  div.innerHTML=`
+    <div class="ca-item-num">Corrective Action #${id}</div>
+    <button type="button" class="del-item" style="border-color:var(--amber);color:var(--amber);background:var(--amber-lt);" onclick="document.getElementById('ca-item-${id}').remove()">&#10005; Remove</button>
+    <div class="field-row">
+      <div class="field"><label>Responsible Person</label><input type="text" class="ca-person" placeholder="Name of person"/></div>
+      <div class="field"><label>Due Date</label><input type="date" class="ca-due"/></div>
+    </div>`;
+  document.getElementById('ca-list').appendChild(div);
+}
+addCA();
+
+// ── Photos ──
+let photos=[], photoSeq=0;
+
+// Determine natural display height for an image keeping aspect ratio, max 400px wide
+function getImageDimensions(dataUrl){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>resolve({w:img.naturalWidth,h:img.naturalHeight});
+    img.src=dataUrl;
+  });
+}
+
+async function renderPhotos(){
+  const grid=document.getElementById('photo-grid');
+  const msg =document.getElementById('no-photo-msg');
+  grid.innerHTML='';
+  if(photos.length===0){msg.style.display='block';return;}
+  msg.style.display='none';
+  for(const p of photos){
+    const dims = await getImageDimensions(p.dataUrl);
+    // Show at natural ratio but capped to card width
+    const isPortrait = dims.h > dims.w;
+    const imgStyle = isPortrait
+      ? 'width:auto;max-width:100%;max-height:480px;display:block;margin:0 auto;'
+      : 'width:100%;display:block;';
+    const card=document.createElement('div');
+    card.className='photo-card';
+    card.innerHTML=`
+      <img src="${p.dataUrl}" style="${imgStyle}" />
+      <button type="button" class="photo-del" onclick="removePhoto(${p.id})">&#10005;</button>
+      <div class="photo-caption">
+        <input type="text" placeholder="Caption…" value="${p.caption||''}" oninput="updCaption(${p.id},this.value)"/>
+        <span class="photo-ref-tag">${p.ref}</span>
+      </div>`;
+    grid.appendChild(card);
+  }
+}
+
+function addPhoto(dataUrl){
+  photoSeq++;
+  const ncr=document.getElementById('ncr-display').textContent||'NCR';
+  photos.push({id:photoSeq, dataUrl, caption:'', ref:ncr+'-Photo-'+String(photoSeq).padStart(2,'0')});
+  renderPhotos();
+}
+function removePhoto(id){ photos=photos.filter(p=>p.id!==id); renderPhotos(); }
+function updCaption(id,val){ const p=photos.find(x=>x.id===id); if(p) p.caption=val; }
+function readFiles(files){ Array.from(files).forEach(f=>{ const r=new FileReader(); r.onload=e=>addPhoto(e.target.result); r.readAsDataURL(f); }); }
+
+document.getElementById('file-camera').addEventListener('change',function(){ readFiles(this.files); this.value=''; });
+document.getElementById('file-gallery').addEventListener('change',function(){ readFiles(this.files); this.value=''; });
+
+let camStream=null;
+function openCamera(){
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
+      .then(stream=>{ camStream=stream; const v=document.getElementById('cam-video'); v.srcObject=stream; v.play(); document.getElementById('cam-modal').classList.add('active'); })
+      .catch(()=>document.getElementById('file-camera').click());
+  } else { document.getElementById('file-camera').click(); }
+}
+function openGallery(){ document.getElementById('file-gallery').click(); }
+function snapPhoto(){
+  const v=document.getElementById('cam-video'), c=document.getElementById('cam-canvas');
+  c.width=v.videoWidth||640; c.height=v.videoHeight||480;
+  c.getContext('2d').drawImage(v,0,0);
+  addPhoto(c.toDataURL('image/jpeg',0.92));
+  closeCamera();
+}
+function closeCamera(){ if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;} document.getElementById('cam-modal').classList.remove('active'); }
+
+// ── Reset ──
+function resetForm(){
+  if(!confirm('Reset all data?'))return;
+  document.querySelectorAll('input:not([readonly]),select,textarea').forEach(e=>e.value='');
+  document.getElementById('ncr-date').value=todayStr;
+  document.getElementById('ncr-list').innerHTML=''; ncrCount=0; addNCR();
+  document.getElementById('ca-list').innerHTML=''; caCount=0; addCA();
+  photos=[]; photoSeq=0; renderPhotos();
+  setToggle('status','open'); setToggle('raised',''); setToggle('sev','');
+  document.querySelectorAll('.field-invalid').forEach(e=>e.classList.remove('field-invalid'));
+  document.querySelectorAll('.toggle-group.invalid').forEach(e=>e.classList.remove('invalid'));
+  generateNCR();
+}
+
+// ── Helpers ──
+const v   = id=>(document.getElementById(id)||{}).value||'';
+const selT= id=>{const e=document.getElementById(id);return e?(e.options[e.selectedIndex]?.text||''):''};
+const fd  = d=>{if(!d)return'—';const[yr,m,day]=d.split('-');return`${day}/${m}/${yr}`;};
+
+// ── Validation (mandatory fields) ──
+function validateForm(){
+  const errors=[];
+  const addErr=(el,msg)=>{ if(el && el.classList) el.classList.add('field-invalid'); errors.push({el,msg}); };
+
+  const projEl=document.getElementById('proj-name');
+  if(!projEl.value) addErr(projEl,'Select a Property / Project');
+
+  const clientEl=document.getElementById('client-name');
+  if(!clientEl.value.trim()) addErr(clientEl,'Enter Client / Unit Name');
+
+  const raisedGroup=document.getElementById('raised-toggle-group');
+  if(!document.getElementById('raised-by-val').value){ raisedGroup.classList.add('invalid'); errors.push({el:raisedGroup,msg:'Select who raised this NCR (Raised By)'}); }
+
+  const reportedEl=document.getElementById('auditor-name');
+  if(!reportedEl.value.trim()) addErr(reportedEl,'Enter Reported By name');
+
+  const ncrDateEl=document.getElementById('ncr-date');
+  if(!ncrDateEl.value) addErr(ncrDateEl,'Enter NCR Date');
+
+  const targetEl=document.getElementById('target-close');
+  if(!targetEl.value) addErr(targetEl,'Enter Target Closure Date');
+
+  const sevGroup=document.getElementById('sev-toggle-group');
+  if(!document.getElementById('sev-val').value){ sevGroup.classList.add('invalid'); errors.push({el:sevGroup,msg:'Select a Severity'}); }
+
+  const items=document.querySelectorAll('#ncr-list .ncr-item');
+  if(items.length===0){ errors.push({el:document.getElementById('ncr-list'),msg:'Add at least one Non-Conformance item'}); }
+  items.forEach((item,idx)=>{
+    const catEl=item.querySelector('.nc-cat');
+    const descEl=item.querySelector('.nc-desc');
+    const otherEl=item.querySelector('.nc-other');
+    if(!catEl.value) addErr(catEl,`Non-Conformance #${idx+1}: select a category`);
+    else if(catEl.value==='Others' && !otherEl.value.trim()) addErr(otherEl,`Non-Conformance #${idx+1}: specify the "Others" category`);
+    if(!descEl.value.trim()) addErr(descEl,`Non-Conformance #${idx+1}: enter a description`);
+  });
+
+  return errors;
+}
+
+// ── PDF EXPORT ──
+async function exportPDF(){
+  const errors=validateForm();
+  if(errors.length){
+    alert('Please complete the required fields before downloading the PDF:\n\n• '+errors.map(e=>e.msg).join('\n• '));
+    const first=errors[0].el;
+    if(first){ first.scrollIntoView({behavior:'smooth',block:'center'}); if(first.focus) first.focus(); }
+    return;
+  }
+
+  const btn=document.getElementById('btn-pdf');
+  btn.disabled=true; btn.textContent='⏳ Building PDF…';
+
+  const ncrNo  = document.getElementById('ncr-display').textContent||'NCR';
+  const sevVal = document.getElementById('sev-val').value;
+  const stVal  = document.getElementById('ncr-status-val').value||'open';
+  const rbVal  = document.getElementById('raised-by-val').value;
+  const sev    = sevVal==='minor'?'Minor':sevVal==='major'?'Major':sevVal==='critical'?'Critical':'—';
+  const stLbl  = stVal==='closed'?'Closed':stVal==='review'?'Under Review':'Open';
+  const rbText = rbVal==='marketing'?'Marketing Department':rbVal==='client'?'Client':rbVal==='mgmt'?'Management':'—';
+  const sevC   = sevVal==='critical'?{bg:'#ffebee',bd:'#f44336',cl:'#c62828'}:sevVal==='major'?{bg:'#fff3e0',bd:'#ff9800',cl:'#e65100'}:{bg:'#e8f5e9',bd:'#4caf50',cl:'#1b5e20'};
+  const stC    = stVal==='closed'?{bg:'#e8f5e9',bd:'#4caf50',cl:'#1b5e20'}:stVal==='review'?{bg:'#fff3e0',bd:'#ff9800',cl:'#e65100'}:{bg:'#ffebee',bd:'#f44336',cl:'#c62828'};
+
+  // NCR items — collect data first so we can drop optional columns that nobody filled in
+  const ncrItemsData=[];
+  document.querySelectorAll('#ncr-list .ncr-item').forEach(item=>{
+    let cat=item.querySelector('.nc-cat')?.value||'';
+    const other=(item.querySelector('.nc-other')?.value||'').trim();
+    if(cat==='Others' && other) cat='Others – '+other;
+    const ref=(item.querySelector('.nc-ref')?.value||'').trim();
+    const desc=(item.querySelector('.nc-desc')?.value||'').trim();
+    const pref=(item.querySelector('.nc-photo')?.value||'').trim();
+    ncrItemsData.push({cat,ref,desc,pref});
+  });
+  const showRefCol   = ncrItemsData.some(it=>it.ref);
+  const showPhotoCol = ncrItemsData.some(it=>it.pref);
+
+  let ncrHeadCols = `<th style="background:#37474f;color:#fff;padding:5px 6px;text-align:center;width:24px;">#</th>
+      <th style="background:#37474f;color:#fff;padding:5px 6px;text-align:left;width:150px;">Category</th>`;
+  if(showRefCol) ncrHeadCols += `<th style="background:#37474f;color:#fff;padding:5px 6px;text-align:left;width:110px;">Client / Unit Ref.</th>`;
+  ncrHeadCols += `<th style="background:#b71c1c;color:#fff;padding:5px 6px;text-align:left;">Description of NC</th>`;
+  if(showPhotoCol) ncrHeadCols += `<th style="background:#546e7a;color:#fff;padding:5px 6px;text-align:center;width:70px;">Photo Ref.</th>`;
+  const ncrColCount = 2 + (showRefCol?1:0) + 1 + (showPhotoCol?1:0);
+
+  let ncrRows='';
+  ncrItemsData.forEach((it,idx)=>{
+    const ni=idx+1;
+    ncrRows+=`<tr style="background:${ni%2?'#fafafa':'#fff'};">
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-weight:700;color:#757575;text-align:center;font-size:9px;">${ni}</td>
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;">${it.cat}</td>
+      ${showRefCol?`<td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;">${it.ref}</td>`:''}
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;">${it.desc}</td>
+      ${showPhotoCol?`<td style="padding:4px 5px;border-bottom:1px solid #eee;text-align:center;font-size:10px;">${it.pref}</td>`:''}
+    </tr>`;
+  });
+
+  // CA rows — only actions with a responsible person filled in; skip the whole section if none
+  let caRows='', ci=0;
+  document.querySelectorAll('#ca-list .ca-item').forEach(item=>{
+    const person=(item.querySelector('.ca-person')?.value||'').trim();
+    if(!person) return;
+    ci++;
+    const dueRaw=item.querySelector('.ca-due')?.value||'';
+    const due=dueRaw?fd(dueRaw):'';
+    caRows+=`<tr style="background:${ci%2?'#fafafa':'#fff'};">
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-weight:700;color:#757575;text-align:center;font-size:9px;">${ci}</td>
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;font-weight:600;">${person}</td>
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;text-align:center;">${due}</td>
+      <td style="padding:4px 5px;border-bottom:1px solid #eee;font-size:10px;">
+        <div style="border-bottom:1px solid #bbb;height:16px;margin-bottom:4px;"></div>
+        <div style="border-bottom:1px solid #bbb;height:16px;margin-bottom:4px;"></div>
+        <div style="border-bottom:1px solid #bbb;height:16px;"></div>
+      </td>
+    </tr>`;
+  });
+  const caSectionHtml = ci>0 ? `
+  <div style="background:#fff3e0;border-left:4px solid #e65100;padding:4px 22px;font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;">Corrective Action</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead><tr>
+      <th style="background:#4e342e;color:#fff;padding:5px 6px;text-align:center;width:24px;">#</th>
+      <th style="background:#4e342e;color:#fff;padding:5px 6px;text-align:left;width:150px;">Responsible Person</th>
+      <th style="background:#4e342e;color:#fff;padding:5px 6px;text-align:center;width:80px;">Due Date</th>
+      <th style="background:#4e342e;color:#fff;padding:5px 6px;text-align:left;">Action Description (to be filled)</th>
+    </tr></thead>
+    <tbody>${caRows}</tbody>
+  </table>` : '';
+
+  // Marketing & Lead Details / Raised By strips — optional entries with no value are omitted entirely
+  const detailPairs = [
+    ['Property / Project', selT('proj-name')],
+    ['Client / Unit Name', v('client-name')],
+    ['Lead / Enquiry Ref.', v('lead-ref')],
+    ['Marketing Executive', v('mkt-exec')]
+  ].filter(([,val])=>val && val.trim());
+  const raisedPairs = [
+    ['Raised By', rbText],
+    ['Reported By', v('auditor-name')],
+    ['NCR Date', fd(v('ncr-date'))]
+  ].filter(([,val])=>val && val!=='—');
+  const stripRow = pairs => `<div style="background:#f9f9f9;border-bottom:1px solid #ddd;padding:5px 22px;display:flex;flex-wrap:wrap;gap:8px 20px;">
+    ${pairs.map(([l,val])=>`<div style="flex:1 1 140px;min-width:120px;"><div style="font-size:9px;color:#757575;text-transform:uppercase;margin-bottom:2px;">${l}</div><div style="font-size:11px;font-weight:600;">${val}</div></div>`).join('')}
+  </div>`;
+
+  // Authorisation — omit the whole block if neither field is filled
+  const icNameVal = v('ic-name').trim();
+  const icDateRaw = v('ic-date');
+  const icDateVal = icDateRaw?fd(icDateRaw):'';
+  const authPairs = [['In-Charge Name',icNameVal],['Date',icDateVal]].filter(([,val])=>val);
+  const authSectionHtml = authPairs.length ? `
+  <div style="background:#e3f2fd;border-left:4px solid #1565c0;padding:4px 22px;font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;">Authorisation</div>
+  <div style="padding:6px 22px;border-bottom:1px solid #ddd;display:flex;flex-wrap:wrap;gap:14px;">
+    ${authPairs.map(([l,val])=>`<div style="flex:1 1 140px;min-width:120px;"><div style="font-size:9px;color:#757575;text-transform:uppercase;margin-bottom:4px;">${l}</div><div style="font-size:13px;font-weight:700;">${val}</div></div>`).join('')}
+  </div>` : '';
+
+  // Photos — proportional scaling, smaller size, portrait stays tall, landscape side-by-side
+  let photoHtml='';
+  if(photos.length>0){
+    const PORTRAIT_W  = 280; // px in the 800px wide render div — ~42% width
+    const LANDSCAPE_W = 340; // px — ~45% width, fits 2 side by side with gap
+
+    const processed = await Promise.all(photos.map(async p=>{
+      const dims = await getImageDimensions(p.dataUrl);
+      const isPortrait = dims.h > dims.w;
+      const dispW = isPortrait ? PORTRAIT_W : LANDSCAPE_W;
+      const dispH = Math.round((dims.h / dims.w) * dispW); // strict proportional height
+      return { ...p, isPortrait, dispW, dispH };
+    }));
+
+    // Build rows: pair landscape images, portrait images appear one or two per row
+    let rows = [];
+    let i = 0;
+    while(i < processed.length){
+      const cur = processed[i];
+      if(!cur.isPortrait && i+1 < processed.length && !processed[i+1].isPortrait){
+        rows.push([processed[i], processed[i+1]]);
+        i += 2;
+      } else if(cur.isPortrait && i+1 < processed.length && processed[i+1].isPortrait){
+        rows.push([processed[i], processed[i+1]]);
+        i += 2;
+      } else {
+        rows.push([processed[i]]);
+        i += 1;
+      }
+    }
+
+    function photoCard(p){
+      return `<div style="border:1.5px solid #ddd;border-radius:6px;overflow:hidden;display:inline-block;vertical-align:top;">
+        <img src="${p.dataUrl}" width="${p.dispW}" height="${p.dispH}" style="display:block;" />
+        <div style="padding:4px 8px;background:#fce4ec;width:${p.dispW}px;">
+          <span style="font-size:8px;font-weight:700;color:#880e4f;text-transform:uppercase;">${p.ref}</span><br/>
+          <span style="font-size:9.5px;color:#212121;">${p.caption||'(No caption)'}</span>
+        </div>
+      </div>`;
+    }
+
+    const rowsHtml = rows.map(row=>{
+      if(row.length === 2){
+        return `<div style="display:flex;gap:12px;margin-bottom:12px;justify-content:flex-start;">
+          ${photoCard(row[0])}${photoCard(row[1])}
+        </div>`;
+      } else {
+        return `<div style="margin-bottom:12px;">${photoCard(row[0])}</div>`;
+      }
+    }).join('');
+
+    photoHtml=`
+      <div style="background:#fce4ec;border-left:4px solid #880e4f;padding:5px 22px;font-size:10px;font-weight:700;color:#880e4f;text-transform:uppercase;">&#128247; Screenshots / Photos — ${photos.length} Item${photos.length>1?'s':''}</div>
+      <div style="padding:12px 22px;border-bottom:1px solid #ddd;">${rowsHtml}</div>`;
+  }
+
+  // Blank lines helper
+  const blankLines = (n,h=20)=>[...Array(n)].map(()=>`<div style="border-bottom:1px solid #bbb;height:${h}px;margin-bottom:4px;"></div>`).join('');
+
+  const html=`
+  <div style="background:linear-gradient(135deg,#FDF0F5,#FEF6EC);padding:10px 22px;display:flex;align-items:center;gap:16px;border-top:4px solid #BC287B;border-bottom:3px solid #EE3166;">
+    <img src="${LOGO_SRC}" style="height:54px;flex-shrink:0;"/>
+    <div style="flex:1;text-align:center;">
+      <div style="font-size:13px;font-weight:800;text-transform:uppercase;color:#342F2E;letter-spacing:.5px;">Non-Conformance Report</div>
+      <div style="font-size:10px;color:#aaa;margin-top:2px;letter-spacing:.3px;">Marketing Department</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="background:#ffebee;border:2px solid #c62828;border-radius:8px;padding:5px 14px;margin-bottom:5px;">
+        <div style="font-size:8px;color:#c62828;text-transform:uppercase;font-weight:700;letter-spacing:.4px;">NCR Number</div>
+        <div style="font-size:14px;font-weight:800;color:#c62828;font-family:monospace;margin-top:1px;">${ncrNo}</div>
+      </div>
+      <div style="display:inline-flex;gap:5px;">
+        <span style="background:${sevC.bg};border:1.5px solid ${sevC.bd};color:${sevC.cl};border-radius:4px;padding:2px 9px;font-size:9px;font-weight:700;text-transform:uppercase;">${sev}</span>
+        <span style="background:${stC.bg};border:1.5px solid ${stC.bd};color:${stC.cl};border-radius:4px;padding:2px 9px;font-size:9px;font-weight:700;text-transform:uppercase;">${stLbl}</span>
+      </div>
+    </div>
+  </div>
+
+  ${stripRow(detailPairs)}
+  ${stripRow(raisedPairs)}
+
+  <div style="background:#ffebee;border-left:4px solid #c62828;padding:4px 22px;font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;">Non-Conformances Observed</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead><tr>
+      ${ncrHeadCols}
+    </tr></thead>
+    <tbody>${ncrRows||`<tr><td colspan="${ncrColCount}" style="padding:8px;text-align:center;color:#999;font-style:italic;">No items recorded</td></tr>`}</tbody>
+  </table>
+
+  ${photoHtml}
+
+  ${caSectionHtml}
+
+  <div style="background:#e8f5e9;border-left:4px solid #2e7d32;padding:4px 22px;font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;">Rectification Update</div>
+  <div style="padding:5px 22px;border-bottom:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div>
+      <div style="font-size:9px;color:#757575;text-transform:uppercase;margin-bottom:6px;">Target Closure Date</div>
+      <div style="font-size:13px;font-weight:700;color:#2e7d32;">${fd(v('target-close'))}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:#757575;text-transform:uppercase;margin-bottom:6px;">Closure Status</div>
+      <div style="display:flex;gap:16px;align-items:center;margin-top:4px;">
+        <span style="font-size:11px;">&#9744; Open &nbsp;&nbsp; &#9744; Closed &nbsp;&nbsp; &#9744; Conditional</span>
+      </div>
+    </div>
+  </div>
+  <div style="padding:6px 22px;border-bottom:1px solid #ddd;">
+    <div style="font-size:9px;color:#757575;text-transform:uppercase;margin-bottom:5px;">Rectification Details (to be completed)</div>
+    ${blankLines(3,18)}
+  </div>
+
+  ${authSectionHtml}
+
+  <div style="padding:8px 22px;background:#fffde7;border-top:1px solid #ffe082;font-size:9.5px;color:#5d4037;line-height:1.7;">
+    <strong style="color:#e65100;">Note:</strong> Corrective action, root cause and rectification details to be completed on this printed / digital copy. NCR must be closed by the target closure date.
+  </div>
+  <div style="background:#37474f;color:#cfd8dc;padding:8px 22px;font-size:9px;display:flex;justify-content:space-between;">
+    <span>Energy Livingscapes Pvt Ltd — Marketing Department</span>
+    <span>Generated: ${new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</span>
+  </div>`;
+
+  // ── Render: two divs — main content + photos (if >4, on separate page) ──
+  const hasPhotos = photos.length > 0;
+  const photosOnNewPage = photos.length > 4;
+
+  let mainHtml = html, photoPageHtml = '';
+  if(photosOnNewPage && hasPhotos){
+    const notice = `<div style="background:#fce4ec;border-left:4px solid #880e4f;padding:4px 22px;font-size:10px;font-weight:700;color:#880e4f;text-transform:uppercase;">&#128247; ${photos.length} Screenshots / Photos — see next page</div>`;
+    mainHtml = html.replace(photoHtml, notice);
+    const gridMatch = photoHtml.match(/<div style="padding:12px 22px.*?<\/div>\s*$/s);
+    const gridContent = gridMatch ? gridMatch[0] : photoHtml;
+    photoPageHtml = `<div style="background:linear-gradient(135deg,#FDF0F5,#FEF6EC);padding:8px 22px;display:flex;align-items:center;gap:14px;border-top:4px solid #BC287B;border-bottom:3px solid #EE3166;">
+      <img src="${LOGO_SRC}" style="height:44px;flex-shrink:0;"/>
+      <div style="flex:1;"><div style="font-size:12px;font-weight:800;text-transform:uppercase;color:#342F2E;">Non-Conformance Report — Screenshots</div>
+      <div style="font-size:10px;color:#888;margin-top:1px;">NCR: ${ncrNo}</div></div>
+    </div>
+    <div style="background:#fce4ec;border-left:4px solid #880e4f;padding:4px 22px;font-size:10px;font-weight:700;color:#880e4f;text-transform:uppercase;">&#128247; Screenshots / Photos (${photos.length})</div>
+    ${gridContent}`;
+  }
+
+  async function renderDiv(htmlContent){
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;background:#fff;font-family:Arial,sans-serif;color:#212121;font-size:12px;';
+    d.innerHTML = htmlContent;
+    document.body.appendChild(d);
+    const c = await html2canvas(d,{scale:2,useCORS:true,logging:false,backgroundColor:'#ffffff',allowTaint:true});
+    document.body.removeChild(d);
+    return c;
+  }
+
+  try{
+    const {jsPDF} = window.jspdf;
+    const pw=210, ph=297, mg=6, uw=pw-mg*2, px=0.264583;
+
+    const cMain = await renderDiv(mainHtml);
+    const scMain = uw/(cMain.width*px);
+    const fwMain = cMain.width*px*scMain;
+    const fhMain = cMain.height*px*scMain;
+    const ppMain = ph-mg*2;
+
+    const naturalPages = fhMain/ppMain;
+    let finalScale = scMain;
+    let finalFw = fwMain;
+    let finalFh = fhMain;
+    if(naturalPages <= 1.25 && !photosOnNewPage){
+      // Shrink to fit the page height only when content is taller than one page.
+      // Never scale UP past the width-fill scale (scMain) — doing so was pushing
+      // content wider than the page and clipping the right margin.
+      const heightFitScale = (ppMain/fhMain)*scMain;
+      const fitScale = Math.min(scMain, heightFitScale);
+      finalScale = fitScale;
+      finalFw = cMain.width*px*fitScale;
+      finalFh = cMain.height*px*fitScale;
+    }
+
+    const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+
+    if(naturalPages <= 1.25 && !photosOnNewPage){
+      pdf.addImage(cMain.toDataURL('image/jpeg',.93),'JPEG', mg, mg, finalFw, finalFh);
+    } else {
+      const pages = Math.ceil(fhMain/ppMain);
+      for(let p=0;p<pages;p++){
+        if(p>0) pdf.addPage();
+        const sy=(p*ppMain/scMain)/px, sh=Math.min((ppMain/scMain)/px,cMain.height-sy);
+        const pc=document.createElement('canvas'); pc.width=cMain.width; pc.height=Math.round(sh);
+        pc.getContext('2d').drawImage(cMain,0,sy,cMain.width,sh,0,0,cMain.width,sh);
+        pdf.addImage(pc.toDataURL('image/jpeg',.93),'JPEG',mg,mg,fwMain,pc.height*px*scMain);
+      }
+    }
+
+    if(photosOnNewPage && hasPhotos){
+      const cPhoto = await renderDiv(photoPageHtml);
+      const scP = uw/(cPhoto.width*px);
+      const fwP = cPhoto.width*px*scP;
+      const fhP = cPhoto.height*px*scP;
+      const ppP = ph-mg*2;
+      const pPages = Math.ceil(fhP/ppP);
+      for(let p=0;p<pPages;p++){
+        pdf.addPage();
+        const sy=(p*ppP/scP)/px, sh=Math.min((ppP/scP)/px,cPhoto.height-sy);
+        const pc=document.createElement('canvas'); pc.width=cPhoto.width; pc.height=Math.round(sh);
+        pc.getContext('2d').drawImage(cPhoto,0,sy,cPhoto.width,sh,0,0,cPhoto.width,sh);
+        pdf.addImage(pc.toDataURL('image/jpeg',.93),'JPEG',mg,mg,fwP,pc.height*px*scP);
+      }
+    }
+
+    pdf.save(ncrNo+'.pdf');
+  } catch(err){
+    alert('PDF generation failed: '+err.message);
+  }
+  btn.disabled=false; btn.textContent='↓ Download PDF';
+}
+</script>
+</body>
+</html>
